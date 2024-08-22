@@ -1,0 +1,15 @@
+extends:
+  - 'eslint:recommended'
+  - 'plugin:@typescript-eslint/recommended'
+  - 'next/core-web-vitals'
+plugins:
+  - '@typescript-eslint'
+  - 'simple-import-sort'
+parser: '@typescript-eslint/parser'
+rules:
+  '@typescript-eslint/no-explicit-any': off
+  'simple-import-sort/imports': error
+  'simple-import-sort/exports': error
+  no-empty:
+    - error
+    - allowEmptyCatch: true
