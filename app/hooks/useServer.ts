@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import type { ServerStatus } from '@/app//lib/definitions';
 import fetcher from '@/app/lib/fetcher';
 
-const url = 'https://api.turkb.us/v2/server';
+const url = process.env.NEXT_PUBLIC_API_URL + '/v2/server';
 
 export default function useServer() {
 	const { data, error, isLoading } = useSWR<ServerStatus[]>(url, fetcher, {

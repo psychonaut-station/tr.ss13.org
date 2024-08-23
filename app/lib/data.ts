@@ -3,8 +3,8 @@ import headers from "@/app/lib/headers";
 
 const revalidate = 3_600; // 1 hour
 
-const player_url = 'https://api.turkb.us/v2/player?ckey=';
-const characters_url = 'https://api.turkb.us/v2/player/characters?ckey=';
+const player_url = process.env.NEXT_PUBLIC_API_URL + '/v2/player?ckey=';
+const characters_url = process.env.NEXT_PUBLIC_API_URL + '/v2/player/characters?ckey=';
 
 export async function getPlayer(ckey: string): Promise<Player> {
 	const playerPromise = fetch(player_url + ckey, { headers, next: { revalidate } });

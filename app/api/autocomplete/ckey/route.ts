@@ -4,7 +4,7 @@ import headers from "@/app/lib/headers";
 
 export const revalidate = 3_600; // 1 hour
 
-const url = 'https://api.turkb.us/v2/autocomplete/ckey?ckey=';
+const url = process.env.NEXT_PUBLIC_API_URL + '/v2/autocomplete/ckey?ckey=';
 
 export async function GET(request: NextRequest) {
 	const ckey = request.nextUrl.searchParams.get('ckey');
