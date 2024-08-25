@@ -20,6 +20,16 @@ body {
 	font-synthesis: none;
 }
 
+input[type='number'] {
+	-moz-appearance: textfield;
+	appearance: textfield;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
 @layer components {
 	.scrollbar-thumb-gray {
 		--tw-scrollbar-thumb: gray;
