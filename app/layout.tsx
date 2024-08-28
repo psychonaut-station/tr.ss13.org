@@ -22,7 +22,7 @@ type RootLayoutProps = { children: React.ReactNode };
 export default function RootLayout({ children }: RootLayoutProps) {
 	return (
 		<html lang="tr">
-			<body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
+			<body className={`${geistSans.variable} ${geistMono.variable} font-sans text-white`}>
 				<div className="w-screen h-screen flex flex-col overflow-x-hidden scrollbar-thumb-gray scrollbar-track-transparent">
 					<NavLinks />
 					<div className="flex-1 flex flex-col items-center px-6 pb-6">
