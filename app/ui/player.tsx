@@ -11,10 +11,6 @@ const all_roles = [...non_roles, ...trait_roles, ...spawner_roles, ...ghost_role
 
 type NonNullablePlayer = NonNullable<Player>;
 
-function clamp(value: number, min: number, max: number) {
-	return Math.min(Math.max(value, min), max);
-}
-
 type PlayerProps = {
 	player: NonNullablePlayer;
 };
@@ -78,6 +74,7 @@ const tooltipFormatter = (value: number) => [value.toString().replace('.', ','),
 function RoletimeChart({ roletime }: RoletimeChartProps) {
 	const [chartWidth, setChartWidth] = useState(800);
 	const [maxBars, setMaxBars] = useState(20);
+	const [inputInvalid, setInputInvalid] = useState(false);
 
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -141,7 +138,22 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 	const visibleRoletime = useMemo(() => filteredRoletime.slice(0, maxBars), [filteredRoletime, maxBars]);
 
 	const onInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-		setMaxBars(clamp(Number(event.target.value), 1, filteredRoletime.length));
+		let value: string | number = event.target.value;
+
+		if (!value) {
+			event.target.value = '1';
+		} else if (value.startsWith('0') && Number(value) !== 0) {
+			event.target.value = String(Number(value))
+		}
+
+		value = Number(event.target.value);
+
+		if (value >= 1 && value <= filteredRoletime.length) {
+			setMaxBars(value);
+			setInputInvalid(false);
+		} else {
+			setInputInvalid(true);
+		}
 	}, [filteredRoletime]);
 
 	useEffect(() => {
@@ -159,11 +171,21 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 
 	useEffect(() => {
 		const preventScroll = (e: Event) => {
-			if (e.target === inputRef.current) {
+			if (inputRef.current && e.target === inputRef.current) {
 				e.preventDefault();
 				e.stopPropagation();
 
-				setMaxBars((maxBars) => clamp(((e as WheelEvent).deltaY > 0 ? -1 : 1) + maxBars, 1, filteredRoletime.length));
+				const deltaY = (e as WheelEvent).deltaY > 0 ? -1 : 1;
+				const value = Math.max(Number(inputRef.current.value) + deltaY, 1);
+
+				inputRef.current.value = String(value);
+
+				if (value >= 1 && value <= filteredRoletime.length) {
+					setMaxBars(value);
+					setInputInvalid(false);
+				} else {
+					setInputInvalid(true);
+				}
 			}
 		}
 
@@ -173,6 +195,18 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 			document.body.firstChild?.removeEventListener('wheel', preventScroll);
 		};
 	}, [filteredRoletime]);
+
+	useEffect(() => {
+		if (inputRef.current) {
+			const value = Number(inputRef.current.value);
+
+			if (value >= 1 && value <= filteredRoletime.length) {
+				setInputInvalid(false);
+			} else {
+				setInputInvalid(true);
+			}
+		}
+	}, [filteredRoletime])
 
 	return (
 		<>
@@ -211,7 +245,7 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 					<input name="other" type="checkbox" checked={chartOptions.nonRole} onChange={onCheckboxChange} />
 				</div>
 			</div>
-			<input className="bg-transparent outline-none text-center" ref={inputRef} type="number" value={maxBars} min={1} max={filteredRoletime.length} onChange={onInputChange} />
+			<input className="bg-transparent outline-none text-center caret-white transition-opacity" style={{ opacity: inputInvalid ? 0.7 : 1 }} ref={inputRef} type="number" defaultValue={maxBars} min={1} max={999} onChange={onInputChange} />
 		</>
 	);
 }
