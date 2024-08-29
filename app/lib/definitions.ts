@@ -22,6 +22,7 @@ export type Player = {
 	byond_age: string;
 	characters: [string, number][];
 	roletime: { job: string; minutes: number }[];
+	activity: [string, number][];
 } | null;
 
 export interface Middleware {
