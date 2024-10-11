@@ -8,11 +8,12 @@ import logo from '@/app/images/logo.png';
 import Button from '@/app/ui/button';
 
 const navigation = [
-	{ href: '/', label: 'Sunucu Durumu' },
+	{ href: '/', label: 'Sunucular' },
 	{ href: '/players', label: 'Oyuncular', sub: true },
 	{ href: '/discord', label: 'Discord', external: true, blank: true },
 	{ href: '/patreon', label: 'Patreon', external: true, blank: true },
 	{ href: '/wiki', label: 'Wiki', external: true },
+	{ href: '/status', label: 'Sunucu Durumu', external: true },
 ];
 
 export default function NavLinks() {
