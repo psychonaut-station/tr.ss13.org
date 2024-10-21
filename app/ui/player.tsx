@@ -1,7 +1,8 @@
 'use client';
 
+import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { antagonist_roles, ghost_roles, non_roles, spawner_roles, trait_roles } from '@/app/lib/constants';
 import type { Player } from '@/app/lib/definitions';
@@ -31,14 +32,6 @@ export default function Player({ player }: PlayerProps) {
 				<span>Son Görülen Tarih: {player.last_seen}</span>
 				<span>BYOND&apos;a Katıldığı Tarih: {player.byond_age}</span>
 			</div>
-			{/* Activity */}
-			<div className="flex flex-col items-center gap-3">
-				<span className="text-center text-3xl font-bold">Aktivite</span>
-				<div className="flex flex-wrap gap-4 justify-center px-8 py-6 sm:px-14 md:px-18 xl:px-60">
-					{/* Todo: Graph */}
-					—
-				</div>
-			</div>
 			{/* Characters */}
 			<div className="flex flex-col items-center gap-3">
 				<span className="text-center text-3xl font-bold">Karakterler</span>
@@ -49,6 +42,17 @@ export default function Player({ player }: PlayerProps) {
 						<span>Hiçbir karakter bulunamadı.</span>
 					)}
 				</div>
+			</div>
+			{/* Activity */}
+			<div className="w-full flex flex-col items-center gap-3 sm:px-14 lg:px-48">
+				<span className="text-center text-3xl font-bold">Aktivite</span>
+				{player.activity.length ? (
+					<ActivityChart activity={player.activity} />
+				) : (
+					<div className="flex justify-center py-6">
+						<span>180 gün içerisinde hiçbir aktivite bulunamadı.</span>
+					</div>
+				)}
 			</div>
 			{/* Roletimes */}
 			<div className="w-full flex flex-col items-center gap-3 sm:px-14 lg:px-48">
@@ -213,10 +217,10 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 			{/* responsive container shit does not work as documented so i needed a workaround */}
 			<ResponsiveContainer ref={chartRef} width="100%" height={400} style={{ position: 'relative', left: -22 }}>
 				<BarChart width={chartWidth} height={400} data={visibleRoletime} margin={{ top: 5, right: 30, left: 20, bottom: 5, }}>
-					<XAxis dataKey="job" />
-					<YAxis />
+					<XAxis dataKey="job" padding={{ left: 5, right: 5 }} />
+					<YAxis padding={{ bottom: 5 }} />
 					<Tooltip cursor={{ opacity: 0.1 }} separator="" formatter={tooltipFormatter} contentStyle={{ background: 'transparent', border: 'none' }} itemStyle={{ color: 'rgb(100 116 139)' }} />
-					<Bar dataKey="hours" fill="#a81d0c" unit=" saat" />
+					<Bar dataKey="hours" fill="#dc2626" unit=" saat" />
 				</BarChart>
 			</ResponsiveContainer>
 			<div className="flex flex-wrap items-center justify-center gap-4 [&>div]:flex [&>div]:items-center [&>div]:gap-2">
@@ -247,5 +251,52 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 			</div>
 			<input className="bg-transparent outline-none text-center caret-white transition-opacity" style={{ opacity: inputInvalid ? 0.7 : 1 }} ref={inputRef} type="number" defaultValue={maxBars} min={1} max={999} onChange={onInputChange} />
 		</>
+	);
+}
+
+type ActivityChartProps = {
+	activity: NonNullablePlayer['activity'];
+};
+
+function ActivityChart({ activity }: ActivityChartProps) {
+	const [chartWidth, setChartWidth] = useState(800);
+
+	const chartRef = useRef<HTMLDivElement>(null);
+
+	const data = useMemo(() => {
+		const activityClone = [...activity];
+		const days: { date: string; rounds: number }[] = [];
+		const firstDay = dayjs().subtract(180, 'day').startOf('day');
+
+		for (let i = 0; i < 180; i++) {
+			const day = firstDay.add(i, 'day').format('YYYY-MM-DD');
+			days.push({ date: day, rounds: activityClone.find(([date]) => date === day)?.[1] ?? 0 });
+		}
+
+		return days;
+	}, [activity]);
+
+	useEffect(() => {
+		const resizeObserver = new ResizeObserver((entries) => {
+			const { width } = entries[0].contentRect;
+			setChartWidth(width);
+		});
+
+		resizeObserver.observe(chartRef.current!);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, [chartRef]);
+
+	return (
+		<ResponsiveContainer ref={chartRef} width="100%" height={400} style={{ position: 'relative', left: -22 }}>
+			<LineChart width={chartWidth} height={400} data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5, }}>
+				<XAxis dataKey="date" tick={false} padding={{ left: 5, right: 5 }} />
+				<YAxis padding={{ bottom: 5 }} />
+				<Tooltip cursor={{ opacity: 0.1 }} separator="" formatter={tooltipFormatter} contentStyle={{ background: 'transparent', border: 'none' }} itemStyle={{ color: 'rgb(100 116 139)' }} />
+				<Line type="monotone" dataKey="rounds" unit=" round" dot={false} />
+			</LineChart>
+		</ResponsiveContainer>
 	);
 }
