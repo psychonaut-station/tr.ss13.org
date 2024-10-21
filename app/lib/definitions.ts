@@ -21,6 +21,7 @@ export type Player = {
 	last_seen_round: number;
 	byond_age: string;
 	characters: [string, number][];
+	roletime: { job: string; minutes: number }[];
 } | null;
 
 export interface Middleware {
