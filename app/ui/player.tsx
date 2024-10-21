@@ -218,7 +218,7 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 			<ResponsiveContainer ref={chartRef} width="100%" height={400} style={{ position: 'relative', left: -22 }}>
 				<BarChart width={chartWidth} height={400} data={visibleRoletime} margin={{ top: 5, right: 30, left: 20, bottom: 5, }}>
 					<XAxis dataKey="job" padding={{ left: 5, right: 5 }} />
-					<YAxis padding={{ bottom: 5 }} />
+					<YAxis padding={{ bottom: 5 }} allowDecimals={false} />
 					<Tooltip cursor={{ opacity: 0.1 }} separator="" formatter={tooltipFormatter} contentStyle={{ background: 'transparent', border: 'none' }} itemStyle={{ color: 'rgb(100 116 139)' }} />
 					<Bar dataKey="hours" fill="#dc2626" unit=" saat" />
 				</BarChart>
@@ -293,7 +293,7 @@ function ActivityChart({ activity }: ActivityChartProps) {
 		<ResponsiveContainer ref={chartRef} width="100%" height={400} style={{ position: 'relative', left: -22 }}>
 			<LineChart width={chartWidth} height={400} data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5, }}>
 				<XAxis dataKey="date" tick={false} padding={{ left: 5, right: 5 }} />
-				<YAxis padding={{ bottom: 5 }} />
+				<YAxis padding={{ bottom: 5 }} domain={[0, 24]} />
 				<Tooltip cursor={{ opacity: 0.1 }} separator="" formatter={tooltipFormatter} contentStyle={{ background: 'transparent', border: 'none' }} itemStyle={{ color: 'rgb(100 116 139)' }} />
 				<Line type="monotone" dataKey="rounds" unit=" round" dot={false} />
 			</LineChart>
