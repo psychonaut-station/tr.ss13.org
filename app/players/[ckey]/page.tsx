@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { getPlayer } from '@/app/lib/data';
+import { openGraph, title } from '@/app/metadata';
 import Player from '@/app/ui/player';
 
 type Props = {
@@ -15,6 +16,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 	return {
 		title: player ? player.byond_key : '404',
+		openGraph: {
+			...openGraph,
+			title: player ? `${player.byond_key} – ${title}` : undefined,
+		}
 	};
 }
 
