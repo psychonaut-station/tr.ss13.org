@@ -3,15 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import { antagonist_roles, ghost_roles, non_roles, spawner_roles, trait_roles } from '@/app/lib/constants';
 import type { Player } from '@/app/lib/definitions';
 import Button from '@/app/ui/button';
+
+const all_roles = [...non_roles, ...trait_roles, ...spawner_roles, ...ghost_roles, ...antagonist_roles];
+
+type NonNullablePlayer = NonNullable<Player>;
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(Math.max(value, min), max);
 }
 
 type PlayerProps = {
-	player: NonNullable<Player>;
+	player: NonNullablePlayer;
 };
 
 export default function Player({ player }: PlayerProps) {
@@ -22,8 +27,8 @@ export default function Player({ player }: PlayerProps) {
 	return (
 		<div className="w-full max-w-full flex-1 flex flex-col items-center gap-5">
 			{/* Basic Info */}
-			<div className="flex flex-col items-center gap-3">
-				<span className="text-center text-5xl font-bold">{player.byond_key}</span>
+			<div className="max-w-full flex flex-col items-center gap-3">
+				<span className="max-w-full text-center text-5xl font-bold overflow-hidden text-ellipsis">{player.byond_key}</span>
 				<span>İlk Görülen Round: {player.first_seen_round}</span>
 				<span>Son Görülen Round: {player.last_seen_round}</span>
 				<span>İlk Görülen Tarih: {player.first_seen}</span>
@@ -38,17 +43,6 @@ export default function Player({ player }: PlayerProps) {
 					—
 				</div>
 			</div>
-			{/* Roletimes */}
-			<div className="w-full flex flex-col items-center gap-3 sm:px-14 lg:px-48">
-				<span className="text-center text-3xl font-bold">Rol Süreleri</span>
-				{player.roletime.length ? (
-					<RoletimeChart roletime={player.roletime} />
-				) : (
-					<div className="flex flex-wrap justify-center gap-4 px-2 py-6 sm:px-14 md:px-18 xl:px-60">
-						<span>Hiçbir rol bulunamadı.</span>
-					</div>
-				)}
-			</div>
 			{/* Characters */}
 			<div className="flex flex-col items-center gap-3">
 				<span className="text-center text-3xl font-bold">Karakterler</span>
@@ -60,45 +54,95 @@ export default function Player({ player }: PlayerProps) {
 					)}
 				</div>
 			</div>
+			{/* Roletimes */}
+			<div className="w-full flex flex-col items-center gap-3 sm:px-14 lg:px-48">
+				<span className="text-center text-3xl font-bold">Rol Süreleri</span>
+				{player.roletime.length ? (
+					<RoletimeChart roletime={player.roletime} />
+				) : (
+					<div className="flex justify-center py-6">
+						<span>Hiçbir rol bulunamadı.</span>
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }
 
 type RoletimeChartProps = {
-	roletime: PlayerProps['player']['roletime'];
+	roletime: NonNullablePlayer['roletime'];
 };
 
-function RoletimeChart({ roletime }: RoletimeChartProps) {
-	const [maxBars, setMaxBars] = useState(20);
-	const [chartWidth, setChartWidth] = useState(800);
+const tooltipFormatter = (value: number) => [value.toString().replace('.', ','), ''];
 
-	const inputRef = useRef<HTMLDivElement>(null);
+function RoletimeChart({ roletime }: RoletimeChartProps) {
+	const [chartWidth, setChartWidth] = useState(800);
+	const [maxBars, setMaxBars] = useState(20);
+
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	const [chartOptions, setChartOptions] = useState({
+		jobs: true,
+		nonRole: false,
+		trait: true,
+		spawner: false,
+		ghost: false,
+		antagonists: false,
+	});
+
 	const chartRef = useRef<HTMLDivElement>(null);
 
-	const visibleRoletime = useMemo(() => roletime.slice(0, maxBars).map(({ job, minutes }) => ({ job, hours: Math.floor(minutes / 6) / 10 })), [roletime, maxBars]);
+	const filterJob = useCallback((
+		job: NonNullablePlayer['roletime'][number]['job'],
+		options: typeof chartOptions
+	) => !(
+		(!options.nonRole && non_roles.includes(job)) ||
+		(!options.trait && trait_roles.includes(job)) ||
+		(!options.spawner && spawner_roles.includes(job)) ||
+		(!options.ghost && ghost_roles.includes(job)) ||
+		(!options.antagonists && antagonist_roles.includes(job)) ||
+		(!options.jobs && !all_roles.includes(job))
+	), []);
 
-	const tooltipFormatter = useCallback((value: number) => [value.toString().replace('.', ','), ''], []);
+	const roletimeFilter = useCallback(({ job }: { job: string; }) =>  filterJob(job, chartOptions), [filterJob, chartOptions]);
+
+	const onCheckboxChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, checked } = event.target;
+
+		const trySet = (options: typeof chartOptions) => {
+			if (roletime.filter(({ job }) => filterJob(job, options)).length) {
+				setChartOptions(options)
+			}
+		};
+
+		switch (name) {
+			case 'jobs':
+				trySet({ ...chartOptions, jobs: checked });
+				break;
+			case 'trait':
+				trySet({ ...chartOptions, trait: checked });
+				break;
+			case 'ghost':
+				trySet({ ...chartOptions, ghost: checked });
+				break;
+			case 'spawner':
+				trySet({ ...chartOptions, spawner: checked });
+				break;
+			case 'antagonists':
+				trySet({ ...chartOptions, antagonists: checked });
+				break;
+			case 'other':
+				trySet({ ...chartOptions, nonRole: checked });
+				break;
+		}
+	}, [roletime, filterJob, chartOptions]);
+
+	const filteredRoletime = useMemo(() => roletime.filter(roletimeFilter).map(({ job, minutes }) => ({ job, hours: Math.floor(minutes / 6) / 10 })), [roletime, roletimeFilter]);
+	const visibleRoletime = useMemo(() => filteredRoletime.slice(0, maxBars), [filteredRoletime, maxBars]);
 
 	const onInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-		setMaxBars(clamp(Number(event.target.value), 1, roletime.length));
-	}, [roletime]);
-
-	useEffect(() => {
-		const preventScroll = (e: Event) => {
-			if (inputRef.current && (e.target === inputRef.current || e.target === inputRef.current.firstChild!)) {
-				e.preventDefault();
-				e.stopPropagation();
-
-				setMaxBars((maxBars) => clamp(maxBars + Math.sign((e as WheelEvent).deltaY) * -1, 1, roletime.length));
-			}
-		}
-
-		document.body.firstChild?.addEventListener('wheel', preventScroll, { passive: false });
-
-		return () => {
-			document.body.firstChild?.removeEventListener('wheel', preventScroll);
-		};
-	}, [roletime]);
+		setMaxBars(clamp(Number(event.target.value), 1, filteredRoletime.length));
+	}, [filteredRoletime]);
 
 	useEffect(() => {
 		const resizeObserver = new ResizeObserver((entries) => {
@@ -113,9 +157,26 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 		};
 	}, [chartRef]);
 
+	useEffect(() => {
+		const preventScroll = (e: Event) => {
+			if (e.target === inputRef.current) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				setMaxBars((maxBars) => clamp(((e as WheelEvent).deltaY > 0 ? -1 : 1) + maxBars, 1, filteredRoletime.length));
+			}
+		}
+
+		document.body.firstChild?.addEventListener('wheel', preventScroll, { passive: false });
+
+		return () => {
+			document.body.firstChild?.removeEventListener('wheel', preventScroll);
+		};
+	}, [filteredRoletime]);
+
 	return (
 		<>
-			{/* responsive container shit does not work as documented so i had to make a state for chart width */}
+			{/* responsive container shit does not work as documented so i needed a workaround */}
 			<ResponsiveContainer ref={chartRef} width="100%" height={400} style={{ position: 'relative', left: -22 }}>
 				<BarChart width={chartWidth} height={400} data={visibleRoletime} margin={{ top: 5, right: 30, left: 20, bottom: 5, }}>
 					<XAxis dataKey="job" />
@@ -124,9 +185,33 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 					<Bar dataKey="hours" fill="#a81d0c" unit=" saat" />
 				</BarChart>
 			</ResponsiveContainer>
-			<div ref={inputRef} className="flex items-center py-2 mb-8 bg-white bg-opacity-5 hover:bg-opacity-10 border border-white border-opacity-10 rounded-[.25rem] text-center">
-				<input className="h-full flex-1 bg-transparent outline-none text-center" type="number" value={maxBars} min={1} max={roletime.length} onChange={onInputChange}></input>
+			<div className="flex flex-wrap items-center justify-center gap-4 [&>div]:flex [&>div]:items-center [&>div]:gap-2">
+				<div>
+					<span>Meslekler</span>
+					<input name="jobs" type="checkbox" checked={chartOptions.jobs} onChange={onCheckboxChange} />
+				</div>
+				<div>
+					<span>Station Trait</span>
+					<input name="trait" type="checkbox" checked={chartOptions.trait} onChange={onCheckboxChange} />
+				</div>
+				<div>
+					<span>Ghost Offer</span>
+					<input name="ghost" type="checkbox" checked={chartOptions.ghost} onChange={onCheckboxChange} />
+				</div>
+				<div>
+					<span>Spawner</span>
+					<input name="spawner" type="checkbox" checked={chartOptions.spawner} onChange={onCheckboxChange} />
+				</div>
+				<div>
+					<span>Antagonist</span>
+					<input name="antagonists" type="checkbox" checked={chartOptions.antagonists} onChange={onCheckboxChange} />
+				</div>
+				<div>
+					<span>Diğer</span>
+					<input name="other" type="checkbox" checked={chartOptions.nonRole} onChange={onCheckboxChange} />
+				</div>
 			</div>
+			<input className="bg-transparent outline-none text-center" ref={inputRef} type="number" value={maxBars} min={1} max={filteredRoletime.length} onChange={onInputChange} />
 		</>
 	);
 }
