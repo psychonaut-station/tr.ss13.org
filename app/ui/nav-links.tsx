@@ -8,7 +8,7 @@ import logo from '@/app/images/logo.png';
 import Button from '@/app/ui/button';
 
 const navigation = [
-	{ href: '/', label: 'Sunucu Durumu' },
+	{ href: '/', label: 'Anasayfa' },
 	{ href: '/players', label: 'Oyuncular', sub: true },
 	{ href: '/discord', label: 'Discord', external: true, blank: true },
 	{ href: '/patreon', label: 'Patreon', external: true, blank: true },

@@ -40,4 +40,8 @@ input[type='number']::-webkit-inner-spin-button {
 		--tw-scrollbar-track: transparent;
 		scrollbar-color: var(--tw-scrollbar-thumb, rgba(156, 163, 175, 0.5)) var(--tw-scrollbar-track, rgba(229, 231, 235, 0.5));
 	}
+
+	.scrollbar-hidden {
+		scrollbar-width: none;
+	}
 }
