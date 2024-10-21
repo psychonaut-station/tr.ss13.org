@@ -5,6 +5,8 @@ import { getPlayer } from '@/app/lib/data';
 import { openGraph, title } from '@/app/metadata';
 import Player from '@/app/ui/player';
 
+export const revalidate = 3_600 // 1 hour
+
 type Props = {
 	params: {
 		ckey: string;
