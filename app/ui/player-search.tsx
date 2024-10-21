@@ -51,7 +51,7 @@ export default function PlayerSearch() {
 				</div>
 			)}
 			{error && (
-				<div className="text-red-500 pb-5">An error has occurred: {error.message}</div>
+				<span className="text-red-500 pb-5">An error has occurred: {error.message}</span>
 			)}
 		</div>
 	);
