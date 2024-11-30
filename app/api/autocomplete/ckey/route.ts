@@ -1,6 +1,6 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from 'next/server';
 
-import headers from "@/app/lib/headers";
+import headers from '@/app/lib/headers';
 
 export const revalidate = 3_600; // 1 hour
 
