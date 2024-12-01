@@ -1,5 +1,5 @@
 /*
-	these are used for bans and such
+	these are abstract roles used for bans and such
 		Slaved Revived Mob
 		Friendly Revived Mob
 		Mind Transfer Potion
@@ -22,14 +22,13 @@ export const roles = {
 		'Blood Brother', 'Changeling', 'Cultist', 'Heretic', 'Malf AI', 'Operative', 'Traitor', 'Wizard', 'Spy',
 		// Midround roles
 		'Abductor', 'Xenomorph', 'Blob', 'Blob Infection', 'Changeling (Midround)', 'Fugitive', 'Lone Operative',
-		'Malf AI (Midround)', 'Nightmare', 'Space Ninja', 'Obsessed', 'Operative (Midround)', 'Paradox Clone',
-		'Head Revolutionary', 'Syndicate Sleeper Agent', 'Space Dragon', 'Spider', 'Wizard (Midround)', 'Voidwalker',
+		'Malf AI (Midround)', 'Nightmare', 'Space Ninja',  'Space Pirate', 'Obsessed', 'Operative (Midround)', 'Paradox Clone',
+		'Head Revolutionary', 'Pyroclastic Anomaly Slime', 'Revenant', 'Syndicate Sleeper Agent', 'Space Dragon', 'Spider',
+		'Wizard (Midround)', 'Voidwalker',
 		// Latejoin roles
 		'Heretic Smuggler', 'Provocateur', 'Stowaway Changeling', 'Syndicate Infiltrator',
 		// Other roles
-		'Ectoplasmic Anomaly Ghost', 'Brainwashed Victim', 'Deathsquad', 'Hypnotized Victim', 'Pyroclastic Anomaly Slime',
-		'Revolutionary', 'Revenant', 'Clown Operative', 'Morph', 'Nuclear Operative', /* */ 'Abductor Scientist',
-		'Abductor Agent', 'Abductor Solo',
+		'Revolutionary', 'Clown Operative', 'Morph', 'Nuclear Operative', /* */ 'Abductor Scientist', 'Abductor Agent', 'Abductor Solo',
 	],
 	ghostRoles: [
 		'Ectoplasmic Anomaly Ghost', 'Brainwashed Victim', 'Deathsquad', 'Sentience Potion Spawn', 'Positronic Brain',
@@ -40,7 +39,7 @@ export const roles = {
 	spawnerRoles: [
 		'Ancient Crew', 'Ash Walker', 'Battlecruiser Captain', 'Battlecruiser Crew', 'Beach Bum', 'Bot', 'Derelict Drone',
 		'Escaped Prisoner', 'Exile', 'Hermit', 'Hotel Staff', 'Lavaland Syndicate', 'Lifebringer', 'Maintenance Drone',
-		'Skeleton', 'Space Bar Patron', 'Space Bartender', 'Space Doctor', 'Space Pirate', 'Space Syndicate',
+		'Skeleton', 'Space Bar Patron', 'Space Bartender', 'Space Doctor', 'Space Syndicate',
 		'Cybersun Space Syndicate', 'Cybersun Space Syndicate Captain', 'Syndicate Drone', 'Venus Human Trap', 'Zombie',
 		'Drone', 'Malfunctioning Bot', 'Free Golem', 'Servant Golem',
 	],
