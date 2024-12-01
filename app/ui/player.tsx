@@ -8,13 +8,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import useResize from '@/app/hooks/useResize';
-import { antagonist_roles, ghost_roles, non_roles, spawner_roles, trait_roles } from '@/app/lib/constants';
+import { roles } from '@/app/lib/constants';
 import type { Player } from '@/app/lib/definitions';
 import { relativeTime } from '@/app/lib/time';
 import Button from '@/app/ui/button';
 import { NumberInput } from '@/app/ui/input';
 
-const all_roles = [...non_roles, ...trait_roles, ...spawner_roles, ...ghost_roles, ...antagonist_roles];
+const allRoles = [...roles.nonRoles, ...roles.traitRoles, ...roles.spawnerRoles, ...roles.ghostRoles, ...roles.antagonistRoles];
 
 type NonNullablePlayer = NonNullable<Player>;
 
@@ -114,12 +114,12 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 		job: NonNullablePlayer['roletime'][number]['job'],
 		options: typeof chartOptions
 	) => !(
-		(!options.nonRole && non_roles.includes(job)) ||
-		(!options.trait && trait_roles.includes(job)) ||
-		(!options.spawner && spawner_roles.includes(job)) ||
-		(!options.ghost && ghost_roles.includes(job)) ||
-		(!options.antagonists && antagonist_roles.includes(job)) ||
-		(!options.jobs && !all_roles.includes(job))
+		(!options.nonRole && roles.nonRoles.includes(job)) ||
+		(!options.trait && roles.traitRoles.includes(job)) ||
+		(!options.spawner && roles.spawnerRoles.includes(job)) ||
+		(!options.ghost && roles.ghostRoles.includes(job)) ||
+		(!options.antagonists && roles.antagonistRoles.includes(job)) ||
+		(!options.jobs && !allRoles.includes(job))
 	), []);
 
 	const roletimeFilter = useCallback(({ job }: { job: string }) => filterJob(job, chartOptions), [filterJob, chartOptions]);
@@ -127,7 +127,7 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 	const onCheckboxChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, checked } = event.target;
 
-		const trySet = (options: typeof chartOptions) => {
+		const setOptions = (options: typeof chartOptions) => {
 			if (roletime.filter(({ job }) => filterJob(job, options)).length) {
 				setChartOptions(options);
 			}
@@ -135,22 +135,22 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 
 		switch (name) {
 			case 'jobs':
-				trySet({ ...chartOptions, jobs: checked });
+				setOptions({ ...chartOptions, jobs: checked });
 				break;
 			case 'trait':
-				trySet({ ...chartOptions, trait: checked });
+				setOptions({ ...chartOptions, trait: checked });
 				break;
 			case 'ghost':
-				trySet({ ...chartOptions, ghost: checked });
+				setOptions({ ...chartOptions, ghost: checked });
 				break;
 			case 'spawner':
-				trySet({ ...chartOptions, spawner: checked });
+				setOptions({ ...chartOptions, spawner: checked });
 				break;
 			case 'antagonists':
-				trySet({ ...chartOptions, antagonists: checked });
+				setOptions({ ...chartOptions, antagonists: checked });
 				break;
 			case 'other':
-				trySet({ ...chartOptions, nonRole: checked });
+				setOptions({ ...chartOptions, nonRole: checked });
 				break;
 		}
 	}, [roletime, filterJob, chartOptions]);
@@ -173,6 +173,9 @@ function RoletimeChart({ roletime }: RoletimeChartProps) {
 			setMaxBars(value);
 			setInputInvalid(false);
 		} else {
+			if (value > filteredRoletime.length) {
+				setMaxBars(filteredRoletime.length);
+			}
 			setInputInvalid(true);
 		}
 	}, [filteredRoletime]);
