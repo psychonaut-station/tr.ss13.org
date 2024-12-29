@@ -1,6 +1,6 @@
 'use client';
 
-import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons';
+import { faAngleLeft, faAngleRight, faQuestion } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome';
 import dayjs from 'dayjs';
 import Link from 'next/link';
@@ -34,9 +34,9 @@ export default function Player({ player }: PlayerProps) {
 				<span className="max-w-full text-center text-5xl font-bold overflow-hidden text-ellipsis">{player.byond_key}</span>
 				<span>İlk Görülen Round: {player.first_seen_round}</span>
 				<span>Son Görülen Round: {player.last_seen_round}</span>
-				<span>İlk Görülen Tarih: {player.first_seen}</span>
-				<span>Son Görülen Tarih: {player.last_seen}</span>
-				<span>BYOND&apos;a Katıldığı Tarih: {player.byond_age}</span>
+				<span>İlk Görülen Tarih: <span title={`${relativeTime(player.first_seen, undefined)} önce`}>{player.first_seen}</span></span>
+				<span>Son Görülen Tarih: <span title={`${relativeTime(player.last_seen, undefined)} önce`}>{player.last_seen}</span></span>
+				<span>BYOND&apos;a Katıldığı Tarih: <span title={`${relativeTime(player.byond_age, undefined)} önce`}>{player.byond_age}</span></span>
 			</div>
 			{/* Characters */}
 			<div className="flex flex-col items-center gap-3">
@@ -45,7 +45,7 @@ export default function Player({ player }: PlayerProps) {
 					{player.characters.length ? player.characters.map(([character]) => (
 						<Button key={character}>{character}</Button>
 					)) : (
-						<span>Hiçbir karakter bulunamadı.</span>
+						<span className="text-center">Hiçbir karakter bulunamadı.</span>
 					)}
 				</div>
 			</div>
@@ -55,7 +55,7 @@ export default function Player({ player }: PlayerProps) {
 				{player.activity.length ? (
 					<ActivityChart activity={player.activity} />
 				) : (
-					<div className="flex justify-center py-6">
+					<div className="flex justify-center py-6 text-center">
 						<span>180 gün içerisinde hiçbir aktivite bulunamadı.</span>
 					</div>
 				)}
@@ -66,18 +66,21 @@ export default function Player({ player }: PlayerProps) {
 				{player.roletime.length ? (
 					<RoletimeChart roletime={player.roletime} />
 				) : (
-					<div className="flex justify-center py-6">
+					<div className="flex justify-center py-6 text-center">
 						<span>Hiçbir rol bulunamadı.</span>
 					</div>
 				)}
 			</div>
 			{/* Ban History */}
 			<div className="w-full flex flex-col items-center gap-3 sm:px-14 lg:px-48">
-				<span className="text-center text-3xl font-bold" title="Yalnızca kalıcı olan banlar gösteriliyor">Ban Geçmişi</span>
+				<span className="text-center text-3xl font-bold">
+					<div className="h-0"><div className="relative left-[calc(100%+8px)] -top-2 w-4 h-4 opacity-60 hover:opacity-100 transition-opacity cursor-help flex" title="Yalnızca 23.08.2023'den itibaren kalıcı olan banlar listeleniyor"><Icon icon={faQuestion} className="w-full h-full" /></div></div>
+					Ban Geçmişi
+				</span>
 				{player.bans.length ? (
 					<BanHistory bans={player.bans} />
 				) : (
-					<div className="flex justify-center py-6">
+					<div className="flex justify-center py-6 text-center">
 						<span>Hiçbir kalıcı ban bulunamadı.</span>
 					</div>
 				)}
