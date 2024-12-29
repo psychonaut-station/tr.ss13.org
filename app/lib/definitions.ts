@@ -10,6 +10,7 @@ export type ServerStatus = {
 	round_id: number;
 	security_level: string;
 	server_status: number;
+	err_str?: string;
 };
 
 export type Player = {

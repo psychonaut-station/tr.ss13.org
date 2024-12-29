@@ -32,6 +32,7 @@ type ServerProps = {
 
 function Server({ status }: ServerProps) {
 	const durationRef = useRef<HTMLSpanElement>(null);
+	const errorRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		let duration = status.round_duration;
@@ -48,13 +49,19 @@ function Server({ status }: ServerProps) {
 		};
 	}, [status.round_duration]);
 
+	useEffect(() => {
+		if (errorRef.current) {
+			errorRef.current.innerHTML = status.err_str ?? '';
+		}
+	}, [status.err_str]);
+
 	return (
 		<div className="w-full flex flex-col p-4 bg-white shadow-slate-200 shadow-glow rounded-xl text-sm font-light text-gray-500 [&>span>span]:text-black">
 			<div className="flex justify-between uppercase">
 				<span className="text-xl font-extrabold">{status.name}</span>
 				<span className={`${status.server_status ? 'bg-lime-400' : 'bg-red-400'} self-center px-2 rounded-xl text-white leading-7`}>{status.server_status ? 'Aktif' : 'Kapalı'}</span>
 			</div>
-			{!!status.server_status && (
+			{status.server_status ? (
 				<>
 					<span>Map: <span>{status.map}</span></span>
 					<span>Oyuncu sayısı: <span>{status.players}</span></span>
@@ -63,6 +70,8 @@ function Server({ status }: ServerProps) {
 					<span>Round süresi: <span ref={durationRef}>{roundDuration(status.round_duration)}</span></span>
 					<a className="w-min px-2 py-1 mt-2 bg-green-400 hover:bg-green-500 rounded-xl text-white transition-colors" href={`byond://${status.connection_info}`}>Bağlan</a>
 				</>
+			) : (
+				<div ref={errorRef}></div>
 			)}
 		</div>
 	);
