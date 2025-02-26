@@ -37,6 +37,44 @@ export type Player = {
 	}[];
 } | null;
 
+export type Death = {
+	name: string;
+	job: string;
+	pod: string;
+	bruteloss: number;
+	fireloss: number;
+	oxyloss: number;
+	toxloss: number;
+	last_words: string | null;
+	suicide: boolean;
+	round_id: number | null;
+    tod: string;
+};
+
+export type StatisticDatas = {
+	data: Death[] | Citation[];
+	total_count: number;
+} | null;
+
+export type Citation = {
+	sender: string;
+	recipient: string;
+	crime: string;
+	fine: number | null;
+	timestamp: string;
+	round_id: number | null;
+};
+
+export type ChartData = {
+	round_id: number;
+	threat_level: number;
+	citations: number;
+	deaths: number;
+	readyed_players: number;
+	total_players: number;
+	round_duration: number;
+};
+
 export interface Middleware {
 	matcher: string[];
 	condition: (request: NextRequest) => boolean;

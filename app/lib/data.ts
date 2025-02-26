@@ -1,4 +1,4 @@
-import type { Player } from '@/app/lib/definitions';
+import type { ChartData, Player } from '@/app/lib/definitions';
 import headers from '@/app/lib/headers';
 
 const revalidate = 3_600; // 1 hour
@@ -8,6 +8,8 @@ const characters_url = process.env.NEXT_PUBLIC_API_URL + '/v2/player/characters?
 const roletime_url = process.env.NEXT_PUBLIC_API_URL + '/v2/player/roletime?ckey=';
 const activity_url = process.env.NEXT_PUBLIC_API_URL + '/v2/player/activity?ckey=';
 const bans_url = process.env.NEXT_PUBLIC_API_URL + '/v2/player/ban?permanent=true&since=2023-08-23%2023:59:59&ckey=';
+
+const chartdata_url = process.env.NEXT_PUBLIC_API_URL + '/v2/events/chart-data?limit=100';
 
 const censoredWords = process.env.BAN_REASON_CENSOR?.split(',').map(word => new RegExp(`${word}[^ ]*`, 'gmi')) ?? [];
 
@@ -65,4 +67,31 @@ export async function getPlayer(ckey: string): Promise<Player> {
 		activity,
 		bans,
 	};
+}
+
+
+export async function getChartData(): Promise<ChartData[]> {
+	const chartDataPromise = fetch(chartdata_url, { headers, next: { revalidate } });
+
+	const [
+		chartDataResponse
+	] = await Promise.all([
+		chartDataPromise
+	]);
+
+	if (!chartDataResponse.ok) {
+		if (chartDataResponse.status === 404) {
+			return [];
+		}
+
+		throw new Error('Internal API Error');
+	}
+
+	const [
+		chart_data
+	] = await Promise.all([
+		chartDataResponse.json()
+	]);
+
+	return chart_data
 }
