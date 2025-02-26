@@ -69,7 +69,6 @@ export async function getPlayer(ckey: string): Promise<Player> {
 	};
 }
 
-
 export async function getChartData(): Promise<ChartData[]> {
 	const chartDataPromise = fetch(chartdata_url, { headers, next: { revalidate } });
 
