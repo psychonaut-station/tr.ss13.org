@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const page = request.nextUrl.searchParams.get('page');    
 
     try {
-        const response = await fetch(url + `?fetch_size=${fetch_size}&page=${page}`, { headers });
+        const response = await fetch(url + `?fetch_size=${fetch_size}&page=${page}`, { headers, next: { revalidate }  });
 
         if (!response.ok) {
             return new NextResponse('Internal API Error', { status: 500 });
