@@ -262,15 +262,15 @@ function StatisticsOverview({ chart_data }: { chart_data: ChartData[] }) {
             </div>
           )
           break;
-          case "deaths":
-          case "citations":
-            data = (
-              <div className="custom-tooltip">
-                <p className="text-center text-gray-100">{payload[0].value} Kişi</p>
-                <p className="text-center text-gray-400 text-sm">{`Round ${label}`}</p>
-              </div>
-            )
-            break;
+        case "deaths":
+        case "citations":
+          data = (
+            <div className="custom-tooltip">
+              <p className="text-center text-gray-100">{payload[0].value} Kişi</p>
+              <p className="text-center text-gray-400 text-sm">{`Round ${label}`}</p>
+            </div>
+          )
+          break;
       }
       return data;
     }
