@@ -18,7 +18,7 @@ const pageSizeOptions = [10, 20, 30, 40];
 export default function Statistics({ chart_data }: { chart_data: ChartData[] }) {
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [pageSize, setPageSize] = useState(20);
   const [items, setItems] = useState<(Citation | Death)[]>([]);
   const [paginatedItems, setPaginatedItems] = useState<(Citation | Death)[]>([]);
   const [totalPages, setTotalPages] = useState(1);
