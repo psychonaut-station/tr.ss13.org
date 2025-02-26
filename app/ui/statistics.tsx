@@ -167,10 +167,10 @@ function Event({ item }: { item: Death | Citation }) {
               )}
             </div>
             <div className="flex flex-1 justify-end items-center gap-2">
-              <span className="text-red-500 text-sm">{item.bruteloss}</span>
-              <span className="text-orange-500 text-sm">{item.fireloss}</span>
-              <span className="text-blue-500 text-sm">{item.oxyloss}</span>
-              <span className="text-green-500 text-sm">{item.toxloss}</span>
+              <span title="Brute Damage" className="text-red-500 text-sm">{item.bruteloss}</span>
+              <span title="Burn Damage" className="text-orange-500 text-sm">{item.fireloss}</span>
+              <span title="Oxygen Damage" className="text-blue-500 text-sm">{item.oxyloss}</span>
+              <span title="Toxin Damage" className="text-green-500 text-sm">{item.toxloss}</span>
             </div>
           </div>
         </div>
