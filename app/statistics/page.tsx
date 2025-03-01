@@ -1,13 +1,11 @@
 import type { Metadata } from 'next';
 
-import { getChartData } from '@/app/lib/data';
+import { getStatistics } from '@/app/lib/data';
 import { openGraph, title } from '@/app/metadata';
-
-import Statistics from '../ui/statistics';
+import Statistics from '@/app/ui/statistics';
 
 export const metadata: Metadata = {
 	title: 'İstatistikler',
-	// description: null,
 	openGraph: {
 		...openGraph,
 		title: `İstatistikler – ${title}`,
@@ -15,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-	const chart_data = await getChartData()
+	const statistics = await getStatistics();
 
-	return <Statistics chart_data={chart_data.toReversed()}/>;
+	return <Statistics statistics={statistics.toReversed()} />;
 }

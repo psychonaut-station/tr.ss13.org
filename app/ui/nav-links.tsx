@@ -10,7 +10,7 @@ import Button from '@/app/ui/button';
 const navigation = [
 	{ href: '/', label: 'Anasayfa' },
 	{ href: '/players', label: 'Oyuncular', sub: true },
-	{ href: '/statistics', label: 'İstatistikler', sub: true },	
+	{ href: '/statistics', label: 'İstatistikler', sub: true },
 	{ href: '/discord', label: 'Discord', external: true, blank: true },
 	{ href: '/patreon', label: 'Patreon', external: true, blank: true },
 	{ href: '/wiki', label: 'Wiki', external: true },

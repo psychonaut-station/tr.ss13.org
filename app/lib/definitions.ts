@@ -48,13 +48,8 @@ export type Death = {
 	last_words: string | null;
 	suicide: boolean;
 	round_id: number | null;
-    tod: string;
+	tod: string;
 };
-
-export type StatisticDatas = {
-	data: Death[] | Citation[];
-	total_count: number;
-} | null;
 
 export type Citation = {
 	sender: string;
@@ -65,7 +60,7 @@ export type Citation = {
 	round_id: number | null;
 };
 
-export type ChartData = {
+export type OverviewData = {
 	round_id: number;
 	threat_level: number;
 	citations: number;

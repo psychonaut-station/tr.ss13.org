@@ -45,3 +45,10 @@ export function relativeTime(past: string, future: string | undefined): string {
 
 	return array.join(' ');
 }
+
+export function minutesToHours(minutes: number): string {
+	const hours = Math.floor(minutes / 60);
+	const remainder = minutes % 60;
+
+	return `${hours ? `${hours} saat ` : ''}${remainder} dakika`;
+}
