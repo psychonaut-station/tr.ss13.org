@@ -68,6 +68,7 @@ export type OverviewData = {
 	readied_players: number;
 	players: number;
 	duration: number;
+	time: string;
 };
 
 export interface Middleware {

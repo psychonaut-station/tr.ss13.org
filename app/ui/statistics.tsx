@@ -38,15 +38,25 @@ type OverviewCategory = keyof typeof overview_categories;
 
 function Overview({ overview }: { overview: OverviewData[] }) {
 	const [chartWidth, setChartWidth] = useState(800);
-	const [selectedCategory, setSelectedCategory] = useState<OverviewCategory>('players');
-
 	const chartRef = useRef<HTMLDivElement>(null);
 
-	const filtered = useMemo(() => overview.filter(r => r.duration > 10).sort((a, b) => a.round_id - b.round_id), [overview]);
+	const [selectedCategory, setSelectedCategory] = useState<OverviewCategory>('players');
+	const [nightHours, setNightHours] = useState(false);
+
+	const filtered = useMemo(() => overview.filter((round) => {
+		if (!nightHours) {
+			const time = new Date(`${round.time} GMT+0`);
+			const hours = time.getUTCHours();
+			// 12:00 - 00:00 GMT+3
+			if (!(hours >= 9 && hours < 21)) return false;
+		}
+
+		return round.duration > 10;
+	}).sort((a, b) => a.round_id - b.round_id), [overview, nightHours]);
 
 	// workaround for line animation on category change otherwise it doesn't animate
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const workaround = useMemo(() => Array.from(filtered), [filtered, selectedCategory]);
+	const animated = useMemo(() => Array.from(filtered), [filtered, selectedCategory]);
 
 	useResize((entries) => {
 		const { width } = entries[0].contentRect;
@@ -55,18 +65,24 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 
 	return (
 		<div className="w-full flex flex-col sm:flex-row">
-			<div className="max-sm:w-full h-min p-4 mb-4 sm:mb-0 bg-gray-700 bg-opacity-10 rounded-xl">
-				<h2 className="mb-4 text-white text-lg font-bold text-center sm:text-base">Kategoriler</h2>
-				<ul className="space-y-2 [&>li]:px-4 [&>li]:py-2">
-					{Object.entries(overview_categories).map(([category, name]) => (
-						<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors text-nowrap`} onClick={() => setSelectedCategory(category as OverviewCategory)}>{name}</li>
-					))}
-				</ul>
+			<div className="max-sm:w-full h-min flex flex-col">
+				<div className="max-sm:w-full h-min p-4 bg-gray-700 bg-opacity-10 rounded-xl">
+					<h2 className="mb-4 text-white text-lg font-bold text-center sm:text-base">Kategoriler</h2>
+					<ul className="space-y-2 [&>li]:px-4 [&>li]:py-2">
+						{Object.entries(overview_categories).map(([category, name]) => (
+							<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors text-nowrap`} onClick={() => setSelectedCategory(category as OverviewCategory)}>{name}</li>
+						))}
+					</ul>
+				</div>
+				<span className="py-2 text-center" title="00:00 ile 12:00 arası">
+					<input type="checkbox" checked={nightHours} onChange={(e) => setNightHours(e.target.checked)} />
+					&nbsp;Gece saatleri
+				</span>
 			</div>
 			<div className="max-sm:w-full sm:flex-1 rounded-xl">
 				<div className="w-full flex justify-center">
 					<ResponsiveContainer ref={chartRef} width="100%" height={400}>
-						<LineChart width={chartWidth} height={400} data={workaround} margin={{ top: 5, right: 50, left: 0, bottom: 5 }}>
+						<LineChart width={chartWidth} height={400} data={animated} margin={{ top: 5, right: 50, left: 0, bottom: 5 }}>
 							<XAxis dataKey="round_id" padding={{ left: 5, right: 5 }} />
 							<YAxis padding={{ bottom: 5 }} allowDecimals={false} />
 							<Tooltip
@@ -87,14 +103,14 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 	);
 }
 
-function OverviewTooltip({ active, payload, label, category }: TooltipProps<number, string> & { category: OverviewCategory }) {
+function OverviewTooltip({ active, payload, label, category }: TooltipProps<number, string> & { category: OverviewCategory; }) {
 	if (active && payload && payload.length) {
 		switch (category) {
 			case 'players':
 				return (
 					<div className="[&>p]:text-center [&>p]:text-gray-100 [&>p:last-child]:text-gray-400 [&>p:last-child]:text-sm">
 						<p>Toplam: {payload[0].value} kişi</p>
-						<p>Ready: {payload[1]?.value} kişi</p>
+						<p>Ready: {payload[1]?.value ?? '0'} kişi</p>
 						<p>{`Round ${label}`}</p>
 					</div>
 				);
