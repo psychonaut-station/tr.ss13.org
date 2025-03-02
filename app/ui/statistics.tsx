@@ -2,7 +2,7 @@
 
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, TooltipProps, XAxis, YAxis } from 'recharts';
 import useSWRImmutable from 'swr/immutable';
 
@@ -27,8 +27,8 @@ export default function Statistics({ statistics }: { statistics: OverviewData[] 
 }
 
 const overview_categories = {
-	total_players: 'Oyuncular',
-	round_duration: 'Round Süresi',
+	players: 'Oyuncular',
+	duration: 'Round Süresi',
 	threat_level: 'Tehdit',
 	deaths: 'Ölümler',
 	citations: 'Para Cezaları',
@@ -38,14 +38,15 @@ type OverviewCategory = keyof typeof overview_categories;
 
 function Overview({ overview }: { overview: OverviewData[] }) {
 	const [chartWidth, setChartWidth] = useState(800);
-	const [selectedCategory, setSelectedCategory] = useState<OverviewCategory>('total_players');
-	const [initial, setInitial] = useState(0);
+	const [selectedCategory, setSelectedCategory] = useState<OverviewCategory>('players');
 
 	const chartRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		setInitial((initial) => initial + 1);
-	}, [selectedCategory]);
+	const filtered = useMemo(() => overview.filter(r => r.duration > 10).sort((a, b) => a.round_id - b.round_id), [overview]);
+
+	// workaround for line animation on category change otherwise it doesn't animate
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	const workaround = useMemo(() => Array.from(filtered), [filtered, selectedCategory]);
 
 	useResize((entries) => {
 		const { width } = entries[0].contentRect;
@@ -58,14 +59,14 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 				<h2 className="mb-4 text-white text-lg font-bold text-center sm:text-base">Kategoriler</h2>
 				<ul className="space-y-2 [&>li]:px-4 [&>li]:py-2">
 					{Object.entries(overview_categories).map(([category, name]) => (
-						<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors`} onClick={() => setSelectedCategory(category as OverviewCategory)}>{name}</li>
+						<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors text-nowrap`} onClick={() => setSelectedCategory(category as OverviewCategory)}>{name}</li>
 					))}
 				</ul>
 			</div>
 			<div className="max-sm:w-full sm:flex-1 rounded-xl">
 				<div className="w-full flex justify-center">
 					<ResponsiveContainer ref={chartRef} width="100%" height={400}>
-						<LineChart width={chartWidth} height={400} data={overview} margin={{ top: 5, right: 50, left: 0, bottom: 5 }}>
+						<LineChart width={chartWidth} height={400} data={workaround} margin={{ top: 5, right: 50, left: 0, bottom: 5 }}>
 							<XAxis dataKey="round_id" padding={{ left: 5, right: 5 }} />
 							<YAxis padding={{ bottom: 5 }} allowDecimals={false} />
 							<Tooltip
@@ -74,10 +75,9 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 								itemStyle={{ color: 'rgb(186 186 186)' }}
 								content={<OverviewTooltip category={selectedCategory} />}
 							/>
-							<Line dataKey={selectedCategory} unit="" dot={false} type="monotone" />
-							{selectedCategory === 'total_players' && (
-								// todo: readyed_players -> readieded_players
-								<Line dataKey="readyed_players" unit="" dot={false} type="monotone" stroke="#fcdf76" isAnimationActive={initial === 1} />
+							<Line dataKey={selectedCategory} dot={false} type="monotone" />
+							{selectedCategory === 'players' && (
+								<Line dataKey="readied_players" dot={false} type="monotone" stroke="#fcdf76" />
 							)}
 						</LineChart>
 					</ResponsiveContainer>
@@ -90,7 +90,7 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 function OverviewTooltip({ active, payload, label, category }: TooltipProps<number, string> & { category: OverviewCategory }) {
 	if (active && payload && payload.length) {
 		switch (category) {
-			case 'total_players':
+			case 'players':
 				return (
 					<div className="[&>p]:text-center [&>p]:text-gray-100 [&>p:last-child]:text-gray-400 [&>p:last-child]:text-sm">
 						<p>Toplam: {payload[0].value} kişi</p>
@@ -98,7 +98,7 @@ function OverviewTooltip({ active, payload, label, category }: TooltipProps<numb
 						<p>{`Round ${label}`}</p>
 					</div>
 				);
-			case 'round_duration':
+			case 'duration':
 				return (
 					<div className="[&>p]:text-center [&>p]:text-gray-100 [&>p:last-child]:text-gray-400 [&>p:last-child]:text-sm">
 						<p>{minutesToHours(payload[0].value ?? 0)}</p>
@@ -173,7 +173,7 @@ function Events() {
 				<h2 className="mb-4 text-white text-lg font-bold text-center sm:text-base">Kategoriler</h2>
 				<ul className="space-y-2 [&>li]:px-4 [&>li]:py-2">
 					{Object.entries(event_categories).map(([category, name]) => (
-						<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors`} onClick={() => setSelectedCategory(category as keyof typeof event_categories)}>{name}</li>
+						<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors text-nowrap`} onClick={() => setSelectedCategory(category as keyof typeof event_categories)}>{name}</li>
 					))}
 				</ul>
 			</div>
@@ -259,6 +259,5 @@ function Event({ item }: { item: Death | Citation }) {
 }
 
 function closest(num: number, opts: number[]) {
-	const closest = opts.reduce((prev, curr) => Math.abs(curr - num) < Math.abs(prev - num) ? curr : prev);
-	return closest;
+	return opts.reduce((prev, curr) => Math.abs(curr - num) < Math.abs(prev - num) ? curr : prev);
 }

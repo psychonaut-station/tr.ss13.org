@@ -65,9 +65,9 @@ export type OverviewData = {
 	threat_level: number;
 	citations: number;
 	deaths: number;
-	readyed_players: number;
-	total_players: number;
-	round_duration: number;
+	readied_players: number;
+	players: number;
+	duration: number;
 };
 
 export interface Middleware {
