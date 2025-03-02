@@ -1,6 +1,6 @@
 'use client';
 
-import { faAngleLeft, faAngleRight, faQuestion } from '@fortawesome/free-solid-svg-icons';
+import { faQuestion } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome';
 import dayjs from 'dayjs';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ import type { Player } from '@/app/lib/definitions';
 import { relativeTime } from '@/app/lib/time';
 import Button from '@/app/ui/button';
 import { NumberInput } from '@/app/ui/input';
+import { Navigation } from '@/app/ui/navigation';
 
 const allRoles = [...roles.nonRoles, ...roles.traitRoles, ...roles.spawnerRoles, ...roles.ghostRoles, ...roles.antagonistRoles];
 
@@ -288,34 +289,19 @@ type BanHistoryProps = {
 function BanHistory({ bans }: BanHistoryProps) {
 	const [currentBan, setCurrentBan] = useState(1);
 
-	const fitView = useCallback(() => {
-		setTimeout(() => {
-			document.getElementById('bans-navigation')?.scrollIntoView({
-				block: 'end',
-				inline: 'nearest',
-				behavior: 'smooth',
-			});
-		}, 1);
-	}, []);
-
-	const onInputChange = useCallback( (event: React.ChangeEvent<HTMLInputElement>) => {
-		const value = Number(event.target.value);
-
+	const onInputChange = useCallback((value: number) => {
 		if (value >= 1 && value <= bans.length) {
 			setCurrentBan(value);
-			fitView();
 		}
-	}, [bans.length, fitView]);
+	}, [bans.length]);
 
-	const onPreviousClick = useCallback(() => {
+	const onPrevious = useCallback(() => {
 		setCurrentBan((current) => Math.max(current - 1, 1));
-		fitView();
-	}, [fitView]);
+	}, []);
 
-	const onNextClick = useCallback(() => {
+	const onNext = useCallback(() => {
 		setCurrentBan((current) => Math.min(current + 1, bans.length));
-		fitView();
-	}, [bans.length, fitView]);
+	}, [bans.length]);
 
 	const ban = bans[bans.length - currentBan];
 
@@ -339,16 +325,7 @@ function BanHistory({ bans }: BanHistoryProps) {
 				<span>Sebep</span>
 				<span className="text-center">{ban.reason}</span>
 			</div>
-			<div className="[&>span]:cursor-pointer [&>span]:px-2">
-				<span onClick={onPreviousClick}><Icon icon={faAngleLeft} /></span>
-				<div className="inline-flex flex-row items-center">
-					<NumberInput value={currentBan} min={1} max={bans.length} onChange={onInputChange} />
-					<span className="cursor-default">/</span>
-					<NumberInput value={bans.length} disabled min={1} max={bans.length} />
-				</div>
-				<span onClick={onNextClick}><Icon icon={faAngleRight} /></span>
-				<div id="bans-navigation" className="relative top-6"></div>
-			</div>
+			<Navigation id="bans-navigation" value={currentBan} min={1} max={bans.length} onPrevious={onPrevious} onNext={onNext} onChange={onInputChange} />
 		</>
 	);
 }
