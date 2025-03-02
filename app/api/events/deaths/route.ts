@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
 		return new NextResponse('Missing fetch_size param', { status: 400 });
 	}
 
+	if (Number(fetchSize) > 40) {
+		return new NextResponse('fetch_size param is too large', { status: 400 });
+	}
+
 	if (!page) {
 		return new NextResponse('Missing page param', { status: 400 });
 	}

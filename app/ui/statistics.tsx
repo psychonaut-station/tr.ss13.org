@@ -2,18 +2,20 @@
 
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, TooltipProps, XAxis, YAxis } from 'recharts';
 import useSWRImmutable from 'swr/immutable';
+import { useDebounce } from 'use-debounce';
 
 import useResize from '@/app/hooks/useResize';
 import { Citation, Death, OverviewData } from '@/app/lib/definitions';
 import fetcher from '@/app/lib/fetcher';
 import { minutesToHours } from '@/app/lib/time';
+import { Navigation } from '@/app/ui/navigation';
 
 export default function Statistics({ statistics }: { statistics: OverviewData[] }) {
 	return (
-		<div className="w-full flex-1 flex flex-col items-center gap-5 px-2 pt-8 pb-14 sm:px-14 lg:px-[13.5rem]">
+		<div className="w-full flex-1 flex flex-col items-center gap-5 px-2 pt-8 sm:px-14 lg:px-[13.5rem]">
 			<div className="w-full flex flex-col items-center gap-5">
 				<span className="text-center text-3xl font-bold mb-4">Genel Bakış</span>
 				<Overview overview={statistics}/>
@@ -26,7 +28,7 @@ export default function Statistics({ statistics }: { statistics: OverviewData[] 
 	);
 }
 
-const overview_categories = {
+const overviewCategories = {
 	players: 'Oyuncular',
 	duration: 'Round Süresi',
 	threat_level: 'Tehdit',
@@ -34,7 +36,7 @@ const overview_categories = {
 	citations: 'Para Cezaları',
 };
 
-type OverviewCategory = keyof typeof overview_categories;
+type OverviewCategory = keyof typeof overviewCategories;
 
 function Overview({ overview }: { overview: OverviewData[] }) {
 	const [chartWidth, setChartWidth] = useState(800);
@@ -55,6 +57,7 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 	}).sort((a, b) => a.round_id - b.round_id), [overview, nightHours]);
 
 	// workaround for line animation on category change otherwise it doesn't animate
+	// might be related to https://github.com/recharts/recharts/issues/5114
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	const animated = useMemo(() => Array.from(filtered), [filtered, selectedCategory]);
 
@@ -64,12 +67,12 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 	}, chartRef);
 
 	return (
-		<div className="w-full flex flex-col sm:flex-row">
-			<div className="max-sm:w-full h-min flex flex-col">
-				<div className="max-sm:w-full h-min p-4 bg-gray-700 bg-opacity-10 rounded-xl">
-					<h2 className="mb-4 text-white text-lg font-bold text-center sm:text-base">Kategoriler</h2>
+		<div className="w-full flex flex-col md:flex-row">
+			<div className="max-md:w-full h-min flex flex-col">
+				<div className="max-md:w-full h-min p-4 bg-gray-700 bg-opacity-10 rounded-xl">
+					<h2 className="mb-4 text-white text-lg font-bold text-center md:text-base">Kategoriler</h2>
 					<ul className="space-y-2 [&>li]:px-4 [&>li]:py-2">
-						{Object.entries(overview_categories).map(([category, name]) => (
+						{Object.entries(overviewCategories).map(([category, name]) => (
 							<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors text-nowrap`} onClick={() => setSelectedCategory(category as OverviewCategory)}>{name}</li>
 						))}
 					</ul>
@@ -79,7 +82,7 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 					&nbsp;Gece saatleri
 				</span>
 			</div>
-			<div className="max-sm:w-full sm:flex-1 rounded-xl">
+			<div className="max-md:w-full md:flex-1 rounded-xl">
 				<div className="w-full flex justify-center">
 					<ResponsiveContainer ref={chartRef} width="100%" height={400}>
 						<LineChart width={chartWidth} height={400} data={animated} margin={{ top: 5, right: 50, left: 0, bottom: 5 }}>
@@ -142,84 +145,110 @@ function OverviewTooltip({ active, payload, label, category }: TooltipProps<numb
 	return null;
 }
 
-const event_categories = {
+const eventCategories = {
 	deaths: 'Ölümler',
 	citations: 'Para Cezaları',
 };
+
+type EventCategory = keyof typeof eventCategories;
+
 const pageSizeOptions = [10, 20, 30, 40] as const;
 
+type PageSizeOption = (typeof pageSizeOptions)[number];
+
 function Events() {
-	const [selectedCategory, setSelectedCategory] = useState<keyof typeof event_categories>('deaths');
+	const [selectedCategory, setSelectedCategory] = useState<EventCategory>('deaths');
 
-	const [currentPage, setCurrentPage] = useState(1);
-	const [pageSize, setPageSize] = useState<(typeof pageSizeOptions)[number]>(20);
-	const [items, setItems] = useState<(Citation | Death)[]>([]);
-	const [paginatedItems, setPaginatedItems] = useState<(Citation | Death)[]>([]);
-	const [totalPages, setTotalPages] = useState(1);
+	const [page, setPage] = useState(1);
+	const [debouncedPage] = useDebounce(page, 200);
+	const [pageSize, setPageSize] = useState<PageSizeOption>(20);
 
-	useEffect(() => {
-		setItems([]);
-		setCurrentPage(1);
-		setTotalPages(1);
-	}, [pageSize, selectedCategory]);
+	type Data = { data: Death[] | Citation[]; total_count: number; };
 
-	const blockIndex = Math.ceil(currentPage / 2);
-	const fetchSize = pageSize * 2;
+	const [shownData, setShownData] = useState<Data | null>(null);
 
-	const { data, error, isLoading } = useSWRImmutable<{ data: Death[] | Citation[]; total_count: number; }>(`/api/events/${selectedCategory}?page=${blockIndex}&fetch_size=${fetchSize}`, fetcher);
+	const { data, error, isLoading } = useSWRImmutable<Data>(`/api/events/${selectedCategory}?page=${debouncedPage}&fetch_size=${pageSize}`, fetcher);
+
+	useSWRImmutable(`/api/events/${selectedCategory}?page=${debouncedPage + 1}&fetch_size=${pageSize}`, fetcher);
 
 	useEffect(() => {
 		if (data) {
-			setItems(data.data);
-			setTotalPages(Math.ceil(data.total_count / pageSize));
+			setShownData(data);
 		}
-	}, [data, pageSize]);
+	}, [data])
+
+	const maxPage = useMemo(() => Math.ceil((shownData?.total_count ?? 1) / pageSize), [pageSize, shownData?.total_count]);
 
 	useEffect(() => {
-		const blockPage = Math.ceil(currentPage / 2);
-		const pageInBlock = currentPage - (blockPage - 1) * 2;
-		const startIndex = (pageInBlock - 1) * pageSize;
-		const endIndex = startIndex + pageSize;
-		setPaginatedItems(items.slice(startIndex, endIndex));
-	}, [items, currentPage, pageSize]);
+		if (page > maxPage) {
+			setPage(maxPage);
+		}
+	}, [page, maxPage]);
+
+	const lastLength = useRef(0);
+
+	useEffect(() => {
+		if (shownData?.data.length) {
+			if (lastLength.current !== 0) {
+				setTimeout(() => {
+					document.getElementById('events-navigation')?.scrollIntoView({
+						block: 'end',
+						inline: 'nearest',
+						behavior: 'smooth',
+					});
+				}, 1);
+			}
+			lastLength.current = shownData.data.length;
+		}
+	}, [shownData?.data.length]);
+
+	const onNext = useCallback(() => {
+		setPage((prev) => Math.min(prev + 1, maxPage));
+	}, [maxPage]);
+
+	const onPrevious = useCallback(() => {
+		setPage((prev) => Math.max(prev - 1, 1));
+	}, []);
+
+	const onChange = useCallback((value: number) => {
+		setPage(Math.min(Math.max(value, 1), maxPage));
+	}, [maxPage]);
 
 	return (
-		<div className="w-full flex flex-col sm:flex-row sm:space-x-4">
-			<div className="max-sm:w-full h-min p-4 mb-4 sm:mb-0 bg-gray-700 bg-opacity-10 rounded-xl">
-				<h2 className="mb-4 text-white text-lg font-bold text-center sm:text-base">Kategoriler</h2>
+		<div className="w-full flex flex-col md:flex-row md:space-x-4">
+			<div className="max-md:w-full h-min p-4 mb-4 bg-gray-700 bg-opacity-10 rounded-xl">
+				<h2 className="mb-4 text-white text-lg font-bold text-center md:text-base">Kategoriler</h2>
 				<ul className="space-y-2 [&>li]:px-4 [&>li]:py-2">
-					{Object.entries(event_categories).map(([category, name]) => (
-						<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors text-nowrap`} onClick={() => setSelectedCategory(category as keyof typeof event_categories)}>{name}</li>
+					{Object.entries(eventCategories).map(([category, name]) => (
+						<li key={category} className={`${selectedCategory === category && 'bg-gray-500'} text-center cursor-pointer rounded-lg text-white hover:bg-gray-500 transition-colors text-nowrap`} onClick={() => setSelectedCategory(category as EventCategory)}>{name}</li>
 					))}
 				</ul>
 			</div>
-			<div className="max-sm:w-full sm:flex-1 bg-gray px-4 rounded-xl">
-				{isLoading && !data && !error && (
+			<div className="max-md:w-full md:flex-1 bg-gray px-4 rounded-xl">
+				{isLoading && !shownData && !error && (
 					<div className="w-full flex items-center justify-center">
 						<div className="w-12 h-12 flex items-center justify-center opacity-50">
 							<Icon icon={faSpinner} size="3x" spin />
 						</div>
 					</div>
 				)}
-				<ul>
-					{paginatedItems.map((item, index) => <Event key={index} item={item} />)}
-				</ul>
+				{shownData && (
+					<ul>
+						{shownData.data.map((item, index) => <Event key={index} item={item} />)}
+					</ul>
+				)}
 				{error && (
 					<div className="w-full flex items-center justify-center">
 						<span className="text-red-500">An error has occurred: {error.message}</span>
 					</div>
 				)}
 				<div className="flex justify-between items-center mt-4">
-					<div>
-						<label className="text-white mr-2">Sayfa Boyutu:</label>
-						<select className="p-2 bg-gray-700 text-white rounded-md" value={pageSize} onChange={(e) => setPageSize(closest(Number(e.target.value), pageSizeOptions as any) as (typeof pageSizeOptions)[number])}>
-							{pageSizeOptions.map(size => <option key={size} value={size}>{size}</option>)}
-						</select>
+					<div className="ml-2 space-x-4" title="Sayfa boyutu">
+						{pageSizeOptions.map(size => <span key={size} className={`${size === pageSize && 'underline'} hover:underline cursor-pointer`} onClick={() => setPageSize(size)}>{size}</span>)}
 					</div>
-					<div className="flex flex-row gap-2 items-center justify-center">
-						<button className="px-3 py-2 bg-gray-700 text-white rounded-md disabled:opacity-50 text-sm sm:text-base transition-opacity" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}>Önceki</button>
-						<span className="flex items-center justify-center text-sm sm:text-base">{currentPage} / {totalPages}</span>
-						<button className="px-3 py-2 bg-gray-700 text-white rounded-md disabled:opacity-50 text-sm sm:text-base transition-opacity" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}>Sonraki</button>
+					<div className="flex items-center gap-1">
+						{shownData && isLoading && <span className="w-5 flex justify-center opacity-50"><Icon icon={faSpinner} spin /></span>}
+						<Navigation id="events-navigation" value={page} min={1} max={maxPage} onPrevious={onPrevious} onNext={onNext} onChange={onChange} />
 					</div>
 				</div>
 			</div>
@@ -232,10 +261,12 @@ function Event({ item }: { item: Death | Citation }) {
 		return (
 			<li className="p-4 mb-4 bg-gray-600 bg-opacity-10 text-white rounded-lg">
 				<div className="w-full flex flex-col">
-					<div className="inline">
-						<span className="mr-1 font-bold text-xl">{item.name}</span><span className="text-gray-400 text-sm">has died at <span className="text-gray-300">{item.pod}</span> as <span className="text-gray-300">{item.job}</span></span>
+					<div className="flex items-center justify-between gap-1">
+						<div className="inline">
+							<span className="mr-1 font-bold text-xl">{item.name}</span><span className="text-gray-400 text-sm">has died at <span className="text-gray-300">{item.pod}</span> as <span className="text-gray-300">{item.job}</span></span>
+						</div>
+						{item.last_words && <span className="text-gray-400 text-sm">&quot;{item.last_words}&quot;</span>}
 					</div>
-					{item.last_words && <span className="text-gray-400 text-sm mt-1">&quot;{item.last_words}&quot;</span>}
 					<div className="w-full mt-2 flex justify-between">
 						<div className="flex flex-wrap gap-2">
 							<div className="border border-red-300 text-red-300 px-2 py-1 rounded-md text-xs">Round {item.round_id}</div>
@@ -257,10 +288,12 @@ function Event({ item }: { item: Death | Citation }) {
 		return (
 			<li className="p-4 mb-4 bg-gray-600 bg-opacity-10 text-white rounded-lg">
 				<div className="w-full flex flex-col">
-					<div className="inline">
-						<span className="mr-1 font-bold text-xl">{item.recipient}</span><span className="text-gray-400 text-sm">fined by <span className="text-gray-300">{item.sender}</span> for <span className="text-gray-300">{item.fine}cr</span></span>
+					<div className="flex items-center justify-between gap-1">
+						<div className="inline">
+							<span className="mr-1 font-bold text-xl">{item.recipient}</span><span className="text-gray-400 text-sm">fined by <span className="text-gray-300">{item.sender}</span> for <span className="text-gray-300">{item.fine}cr</span></span>
+						</div>
+						<span className="text-gray-400 text-sm">{item.crime}</span>
 					</div>
-					<span className="text-gray-400 text-sm mt-1">{item.crime}</span>
 					<div className="w-full mt-2 flex">
 						<div className="flex flex-wrap">
 							<div className="border border-red-300 text-red-300 px-2 py-1 rounded-md text-xs">Round {item.round_id}</div>
@@ -272,8 +305,4 @@ function Event({ item }: { item: Death | Citation }) {
 	}
 
 	return null;
-}
-
-function closest(num: number, opts: number[]) {
-	return opts.reduce((prev, curr) => Math.abs(curr - num) < Math.abs(prev - num) ? curr : prev);
 }
