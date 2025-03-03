@@ -10,8 +10,6 @@ export async function GET(request: NextRequest) {
 	const fetchSize = request.nextUrl.searchParams.get('fetch_size');
 	const page = request.nextUrl.searchParams.get('page');
 
-	// limit
-
 	if (!fetchSize) {
 		return new NextResponse('Missing fetch_size param', { status: 400 });
 	}
