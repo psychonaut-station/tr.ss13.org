@@ -82,7 +82,7 @@ function Overview({ overview }: { overview: OverviewData[] }) {
 					&nbsp;Gece saatleri
 				</span>
 			</div>
-			<div className="max-md:w-full md:flex-1 rounded-xl">
+			<div className="max-md:w-full md:flex-1 rounded-xl overflow-x-hidden">
 				<div className="w-full flex justify-center">
 					<ResponsiveContainer ref={chartRef} width="100%" height={400}>
 						<LineChart width={chartWidth} height={400} data={animated} margin={{ top: 5, right: 50, left: 0, bottom: 5 }}>
